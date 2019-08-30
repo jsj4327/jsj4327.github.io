@@ -1,3 +1,37 @@
 h3 {
 	color:red;
 }
+
+/*code {
+	background-color: black;
+	color: green;
+}*/
+
+/*pre {
+	background-color: gray;
+	color: #f5f5f5;
+}*/
+
+#code1 {
+	background-color: black;
+	border: 1px dotted #000;
+}
+
+body {
+	font-size: 15px;
+}
+
+.hljs {
+ display:block;
+ overflow-x:auto;
+ padding:0.5em;
+ color:#ffffff;
+ background:#282923
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+ color:#3649BC;
+ font-weight:bold
+}

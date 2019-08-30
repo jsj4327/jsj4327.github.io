@@ -84,6 +84,9 @@
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
+                            <li>
+                                <a href="https://github.com/example/repository/edit/master/docs/index.md"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
                     </ul>
                 </div>
             </div>
@@ -117,7 +120,102 @@ docs/
 <h3 id="_1">我的第一个</h3>
 <div id="code1">123</div>
 
-<p><img alt="" src="img/Screenshot from 2019-08-29 08-47-24.png" /></p></div>
+<p><img alt="" src="img/Screenshot from 2019-08-29 08-47-24.png" /></p>
+<pre><code>
+import socket
+import struct
+
+# 全局变量计算包的数目
+g_blknum = 0
+
+# 全局变量保存文件对象
+g_rf = None
+
+# 创建一个请求报文字段
+reqtext = struct.pack(&quot;!H14sb5sb&quot;, 1, b&quot;ipython.tar.gz&quot;, 0, b&quot;octet&quot;, 0)
+print(reqtext)
+
+# 创建UDP套接字
+udps = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# 构建服务器的数据元组，包含ip和端口
+server = (&quot;192.168.0.108&quot;, 69)
+
+# 发送报文请求
+udps.sendto(reqtext, server)
+
+
+while True:
+
+    # 接收服务器端返回的数据
+    data = udps.recvfrom(1024)
+    # print(len(data[0]))
+    # print(data[0])
+    # data是个元组，服务器返回的数据和服务器ip及端口
+
+    # 把纯数据部分存入rdata
+    rdata = data[0]
+    # 把端口号存入serverport
+    serverport = data[1][1]
+
+    # print(rdata)
+    # print(serverport)
+
+    # 把返回数据的操作码和块号存入opblk，再拆包
+    opblk = struct.unpack(&quot;!HH&quot;, rdata[0:4])
+    opcode, block = opblk
+    # print(opcode)
+    print(&quot;reveive:&quot;)
+    print(block)
+
+    # 如果是数据包，则开始处理
+    if opcode == 3:
+        print(&quot;ipcode3&quot;)
+        # 如果是第一块，则要创建文件，并写入
+        if block == 1:
+            print(&quot;block 1&quot;)
+            g_rf = open(&quot;ipython.tar.gz&quot;, &quot;wb&quot;)
+            g_rf.write(rdata[4:])
+            g_blknum += 1
+            ackt = struct.pack(&quot;!HH&quot;, 4, block)
+            print(ackt)
+            udps.sendto(ackt, (&quot;192.168.0.108&quot;, serverport))
+
+        # 后续块，判断顺序是否是预期希望的，是则继续写入
+
+        if (g_blknum+1) == block:
+        #     print(&quot;block %d&quot; % block)
+            if len(data[0]) == 516:
+                g_rf.write(rdata[4:])
+                g_blknum += 1
+                ackt = struct.pack(&quot;!HH&quot;, 4, block)
+                print(ackt)
+                print(&quot;ackbolk&quot;+str(block))
+                udps.sendto(ackt, (&quot;192.168.0.108&quot;, serverport))
+            else:
+                #如果不是516字节，则是最后一个数据包，写完就关闭
+                g_rf.write(rdata[4:])
+                ackt = struct.pack(&quot;!HH&quot;, 4, block)
+                udps.sendto(ackt, (&quot;192.168.0.108&quot;, serverport))
+                g_rf.close()
+                print(&quot;Down load Success!&quot;)
+                break
+        #差错控制，如果发来的数据块是上次接收过的，那么直接确认数据包，不再写入
+        elif g_blknum == block:
+            ackt = struct.pack(&quot;!HH&quot;, 4, block)
+            udps.sendto(ackt, (&quot;192.168.0.108&quot;, serverport))
+        else:
+            print(&quot;g_blknum=&quot;+str(g_blknum))
+            print(&quot;block=&quot;+str(block))
+
+    if opcode == 5:
+        print(&quot;Down load fialed&quot;)
+        break
+
+print(g_blknum)
+
+
+</code></pre></div>
         </div>
 
         <footer class="col-md-12">
@@ -126,7 +224,7 @@ docs/
         </footer>
         <script>
             var base_url = ".",
-                shortcuts = {"search": 83, "next": 78, "help": 191, "previous": 80};
+                shortcuts = {"next": 78};
         </script>
         <script src="js/base.js" defer></script>
         <script src="search/main.js" defer></script>
